@@ -1,6 +1,6 @@
 {
   "name": "amoStorage",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "authors": [
     "amo"
   ],
@@ -10,6 +10,10 @@
     "**/.*",
     "node_modules",
     "bower_components",
+    "coffee",
+    "Gruntfile.coffee",
+    "package.json",
+    "karma.conf.js",
     "test",
     "tests"
   ],

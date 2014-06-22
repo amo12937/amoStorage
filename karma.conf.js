@@ -4,7 +4,7 @@ module.exports = function(config) {
     files: [
       "bower_components/angular/angular.js",
       "bower_components/angular-mocks/angular-mocks.js",
-      "src/**/*.coffee",
+      "coffee/**/*.coffee",
       "test/**/*.coffee"
     ],
     frameworks: ["jasmine"],
@@ -13,7 +13,7 @@ module.exports = function(config) {
     autoWatch: false,
     browsers: ["PhantomJS"],
     preprocessors: {
-      "src/**/*.coffee": "coffee",
+      "coffee/**/*.coffee": "coffee",
       "test/**/*.coffee": "coffee"
     },
     reporters: ["spec"],
