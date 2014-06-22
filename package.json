@@ -9,12 +9,12 @@
   "dependencies": {
     "grunt": "~0.4.5",
     "load-grunt-tasks": "~0.6.0",
-    "time-grunt": "~0.3.2",
+    "time-grunt": "~0.3.2"
   },
   "devDependencies": {
     "grunt-karma": "~0.8.3",
     "karma": "~0.12.16",
-    "karma-jasmine": "~0.2.2"
+    "karma-jasmine": "~0.2.2",
     "karma-coffee-preprocessor": "~0.2.1",
     "karma-phantomjs-launcher": "~0.1.4",
     "karma-spec-reporter": "0.0.13",
