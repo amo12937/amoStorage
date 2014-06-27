@@ -177,7 +177,7 @@ describe "amoStorage module", ->
             $rootScope.$apply()
             setTimeout((->
               item = angular.fromJson(webStorage.getItem(keysKey))
-              expect(item[expectedKey]).toBe true
+              expect(item[prefix][expectedKey]).toBe true
               done()
             ), 110)
           ]
@@ -289,17 +289,21 @@ describe "amoStorage module", ->
         revision: "1"
         keysKey: "amoStorage/1/keys$"
         keys:
-          "amoStorage/1/prefix/key#": "hoge"
-          "amoStorage/1/prefix/key2#": "fuga"
-          "amoStorage/1/prefix2/key3#": "fizz"
+          prefix:
+            "amoStorage/1/prefix/key#": "hoge"
+            "amoStorage/1/prefix/key2#": "fuga"
+          prefix2:
+            "amoStorage/1/prefix2/key3#": "fizz"
 
       prev =
         revision: "2"
         keysKey: "amoStorage/2/keys$"
         keys:
-          "amoStorage[2]_prefix.key#": "foo"
-          "amoStorage[2]_prefix.key2#": "bar"
-          "amoStorage[2]_prefix2.key3#": "buz"
+          prefix:
+            "amoStorage[2]_prefix.key#": "foo"
+            "amoStorage[2]_prefix.key2#": "bar"
+          prefix2:
+            "amoStorage[2]_prefix2.key3#": "buz"
 
       current =
         revision: "3"
@@ -308,11 +312,17 @@ describe "amoStorage module", ->
       revisionsKey = "amoStorage/revisions$"
 
       beforeEach ->
+        f = (data) ->
+          keys = {}
+          for p, v of data.keys
+            keys[p] = {}
+            for k, v2 of v
+              keys[p][k] = true
+              webStorage.setItem k, v2
+          webStorage.setItem data.keysKey, angular.toJson keys
+        f old
+        f prev
         webStorage.setItem revisionsKey, angular.toJson revisions
-        webStorage.setItem old.keysKey, angular.toJson Object.keys(old.keys)
-        webStorage.setItem(k, v) for k, v of old.keys
-        webStorage.setItem prev.keysKey, angular.toJson Object.keys(prev.keys)
-        webStorage.setItem(k, v) for k, v of prev.keys
 
       it "should remove all keys of prev revisions", ->
         module ["amoStorageManagerProvider", (provider) ->
@@ -322,9 +332,13 @@ describe "amoStorage module", ->
         inject ["amoStorageManager", (manager) ->
           expect(angular.fromJson webStorage.getItem revisionsKey).toEqual [current.revision]
           expect(webStorage.getItem old.keysKey).toBe null
-          expect(webStorage.getItem k).toBe(null) for k of old.keys
+          for p, v of old.keys
+            for k of v
+              expect(webStorage.getItem k).toBe null
           expect(webStorage.getItem prev.keysKey).toBe null
-          expect(webStorage.getItem k).toBe(null) for k of prev.keys
+          for p, v of prev.keys
+            for k of v
+              expect(webStorage.getItem k).toBe null
         ]
 
       it "should not remove prev revision when setting ruleForDeletingRevisions", ->
@@ -336,9 +350,13 @@ describe "amoStorage module", ->
         inject ["amoStorageManager", (manager) ->
           expect(angular.fromJson webStorage.getItem revisionsKey).toEqual [current.revision, prev.revision]
           expect(webStorage.getItem old.keysKey).toBe null
-          expect(webStorage.getItem k).toBe(null) for k of old.keys
+          for p, v of old.keys
+            for k of v
+              expect(webStorage.getItem k).toBe null
           expect(webStorage.getItem prev.keysKey).not.toBe null
-          expect(webStorage.getItem k).not.toBe(null) for k of prev.keys
+          for p, v of prev.keys
+            for k of v
+              expect(webStorage.getItem k).not.toBe null
         ]
 
   testForWebStorage(localStorage, "localStorage", "getLocalStorage")

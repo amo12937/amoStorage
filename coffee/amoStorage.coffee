@@ -1,5 +1,11 @@
 "use strict"
 
+util = {}
+util.isEmptyObj = (obj) ->
+  for _ of obj
+    return false
+  return true
+
 angular.module("amo.webStorage", []).provider "amoStorageManager", ->
   provider =
     appName: "amoStorage"
@@ -24,11 +30,13 @@ angular.module("amo.webStorage", []).provider "amoStorageManager", ->
       _keysKey = _genKeysKey _revision
       _revisionsKey = "#{_appName}/revisions#{_suffixForSys}"
 
+      _deleteKeys = (webStorage, keys) ->
+        webStorage.removeItem key for key of keys
+
       _deleteRevision = (webStorage, revision) ->
         keysKey = _genKeysKey revision
         keys = angular.fromJson webStorage.getItem keysKey
-        for key in keys
-          webStorage.removeItem key
+        _deleteKeys webStorage, v for p, v of keys
         webStorage.removeItem keysKey
 
       _refreshRevisions = (webStorage = localStorage) ->
@@ -100,6 +108,9 @@ angular.module("amo.webStorage", []).provider "amoStorageManager", ->
             delete keys[key]
             return value
 
+          delAll: ->
+            _deleteKeys webStorage, keys
+
         return storage
 
       storageFactory = (webStorage) ->
@@ -107,8 +118,10 @@ angular.module("amo.webStorage", []).provider "amoStorageManager", ->
         _storages = {}
         _keys = angular.fromJson(webStorage.getItem(_keysKey) or "{}")
         _prevKeys = {}
-        for k of _keys
-          _prevKeys[k] = true
+        for p, v of _keys
+          _prevKeys[p] = {}
+          for k of v
+            _prevKeys[p][k] = true
 
         _debounce = null
         $rootScope.$watch ->
@@ -117,19 +130,19 @@ angular.module("amo.webStorage", []).provider "amoStorageManager", ->
             _oldKeys = _prevKeys
             _prevKeys = {}
             b = false
-            for k of _keys
-              _prevKeys[k] = true
-              b or= (not _oldKeys[k])
-              delete _oldKeys[k]
-            for _ of _oldKeys
-              b = true
-              break;
-            if b
+            for p, v of _keys
+              _prevKeys[p] = {}
+              for k of v
+                _prevKeys[p][k] = true
+                b or= (not _oldKeys[p]?[k])
+                delete _oldKeys[p]?[k]
+              delete _oldKeys[p] if util.isEmptyObj _oldKeys[p]
+            if b or not util.isEmptyObj _oldKeys
               webStorage.setItem _keysKey, angular.toJson(_prevKeys)
           ), 100))
 
         return (prefix) ->
-          _storages[prefix] ?= AmoStorage(webStorage, prefix, _keys)
+          _storages[prefix] ?= AmoStorage(webStorage, prefix, _keys[prefix] ?= {})
 
       return {
         getLocalStorage: storageFactory(localStorage)
