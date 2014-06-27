@@ -94,7 +94,9 @@ describe "amoStorage module", ->
       expectedKey = "app[1]_prefix.key#"
 
       another =
+        key: "anotherKey"
         value: "anotherValue"
+        expectedKey: "app[1]_prefix.anotherKey#"
 
       beforeEach ->
         module ["amoStorageManagerProvider", (provider) ->
@@ -269,7 +271,7 @@ describe "amoStorage module", ->
           storage.del key
           expect(webStorage.getItem(expectedKey)).toBe null
 
-        it "should remove '#{expectedKey}' key on '#{keysKey}' key", (done) ->
+        it "should remove storage['#{keysKey}']['#{prefix}']['#{expectedKey}']", (done) ->
           inject ["$rootScope", ($rootScope) ->
             storage.set key, value
             $rootScope.$apply()
@@ -278,7 +280,30 @@ describe "amoStorage module", ->
               $rootScope.$apply()
               setTimeout((->
                 item = angular.fromJson webStorage.getItem keysKey
-                expect(item[expectedKey]).not.toBeDefined()
+                expect(item[prefix][expectedKey]).not.toBeDefined()
+                done()
+              ), 110)
+            ), 110)
+          ]
+      describe "delAll method", ->
+        it "should remove all of keys whose prefix is '#{prefix}' on #{webStorageName}", ->
+          storage.set key, value
+          storage.set another.key, another.value
+          storage.delAll()
+          expect(webStorage.getItem(expectedKey)).toBe null
+          expect(webStorage.getItem(another.expectedKey)).toBe null
+
+        it "should remove '#{prefix}' key on '#{keysKey}' key", (done) ->
+          inject ["$rootScope", ($rootScope) ->
+            storage.set key, value
+            storage.set another.key, another.value
+            $rootScope.$apply()
+            setTimeout((->
+              storage.delAll()
+              $rootScope.$apply()
+              setTimeout((->
+                item = angular.fromJson webStorage.getItem keysKey
+                expect(item[prefix]).toEqual({})
                 done()
               ), 110)
             ), 110)

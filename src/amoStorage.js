@@ -47,7 +47,8 @@
             var key, _results;
             _results = [];
             for (key in keys) {
-              _results.push(webStorage.removeItem(key));
+              webStorage.removeItem(key);
+              _results.push(delete keys[key]);
             }
             return _results;
           };
@@ -205,11 +206,9 @@
                       delete _ref1[k];
                     }
                   }
-                  if (util.isEmptyObj(_oldKeys[p])) {
-                    delete _oldKeys[p];
-                  }
+                  b || (b = !util.isEmptyObj(_oldKeys[p]));
                 }
-                if (b || !util.isEmptyObj(_oldKeys)) {
+                if (b) {
                   return webStorage.setItem(_keysKey, angular.toJson(_prevKeys));
                 }
               }), 100));

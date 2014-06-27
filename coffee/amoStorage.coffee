@@ -31,7 +31,9 @@ angular.module("amo.webStorage", []).provider "amoStorageManager", ->
       _revisionsKey = "#{_appName}/revisions#{_suffixForSys}"
 
       _deleteKeys = (webStorage, keys) ->
-        webStorage.removeItem key for key of keys
+        for key of keys
+          webStorage.removeItem key
+          delete keys[key]
 
       _deleteRevision = (webStorage, revision) ->
         keysKey = _genKeysKey revision
@@ -136,8 +138,8 @@ angular.module("amo.webStorage", []).provider "amoStorageManager", ->
                 _prevKeys[p][k] = true
                 b or= (not _oldKeys[p]?[k])
                 delete _oldKeys[p]?[k]
-              delete _oldKeys[p] if util.isEmptyObj _oldKeys[p]
-            if b or not util.isEmptyObj _oldKeys
+              b or= not util.isEmptyObj _oldKeys[p]
+            if b
               webStorage.setItem _keysKey, angular.toJson(_prevKeys)
           ), 100))
 
