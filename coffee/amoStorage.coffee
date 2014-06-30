@@ -66,6 +66,8 @@ angular.module("amo.webStorage", []).provider "amoStorageManager", ->
           if not keys[key]
             return null
           savedValue = angular.fromJson webStorage.getItem(key)
+          if not savedValue
+            return null
           if now - savedValue.config[_confKey.LAST_USAGE_DATETIME] > savedValue.config[_confKey.EXPIRED_TIME] * 1000
             webStorage.removeItem key
             delete keys[key]

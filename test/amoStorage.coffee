@@ -213,6 +213,11 @@ describe "amoStorage module", ->
           storage.set key, value
           expect(storage.get key, "hoge").toBe value
 
+        it "should return the default value if storage was broken", ->
+          storage.set key, "hoge"
+          webStorage.setItem expectedKey, null
+          expect(storage.get key, "hoge").toBe "hoge"
+
         it "should return the default value expired time after", ->
           storage.set key, value, 10
           now = (new Date()).getTime()
