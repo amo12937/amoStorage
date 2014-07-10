@@ -150,9 +150,9 @@
                 }
                 key = _genKey(key);
                 savedValue = keys[key] ? angular.fromJson(webStorage.getItem(key)) : {
-                  config: {},
-                  value: value
+                  config: {}
                 };
+                savedValue.value = value;
                 if (expiredTime) {
                   savedValue.config[_confKey.EXPIRED_TIME] = expiredTime;
                 }

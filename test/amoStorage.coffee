@@ -148,6 +148,14 @@ describe "amoStorage module", ->
           item = angular.fromJson webStorage.getItem expectedKey
           expect(item.config).toBeDefined()
 
+        it "should update the value when set twice", ->
+          storage.set key, value
+          actual = storage.get key
+          expect(actual).toBe value
+          storage.set key, another.value
+          anotherActual = storage.get key
+          expect(anotherActual).toBe another.value
+
         describe "the config on #{webStorageName}", ->
           it "should have {confKey.CREATE_DATETIME} key and its value is the time of now", ->
             now = (new Date()).getTime()
