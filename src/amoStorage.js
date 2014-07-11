@@ -149,9 +149,12 @@
                   now = (new Date()).getTime();
                 }
                 key = _genKey(key);
-                savedValue = keys[key] ? angular.fromJson(webStorage.getItem(key)) : {
-                  config: {}
-                };
+                savedValue = angular.fromJson(webStorage.getItem(key));
+                if (!(savedValue && savedValue.config && savedValue.value)) {
+                  savedValue = {
+                    config: {}
+                  };
+                }
                 savedValue.value = value;
                 if (expiredTime) {
                   savedValue.config[_confKey.EXPIRED_TIME] = expiredTime;
