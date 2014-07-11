@@ -138,12 +138,19 @@ describe "amoStorage module", ->
           storage.set key, value
           expect(webStorage.getItem(expectedKey)).not.toBe null
 
-        it "should set the object that has 'value' key on #{webStorageName}", ->
+        it "should set an object that has 'value' key on #{webStorageName}", ->
           storage.set key, value
           item = angular.fromJson webStorage.getItem expectedKey
           expect(item.value).toBe value
 
-        it "should set the object that has 'config' key on #{webStorageName}", ->
+        it "should set an object that has 'config' key on #{webStorageName}", ->
+          storage.set key, value
+          item = angular.fromJson webStorage.getItem expectedKey
+          expect(item.config).toBeDefined()
+
+        it "should set an object when null was set", ->
+          storage.set key, value
+          webStorage.setItem expectedKey, null
           storage.set key, value
           item = angular.fromJson webStorage.getItem expectedKey
           expect(item.config).toBeDefined()

@@ -94,8 +94,10 @@ angular.module("amo.webStorage", []).provider "amoStorageManager", ->
 
           set: (key, value, expiredTime, now = (new Date()).getTime()) ->
             key = _genKey(key)
-            savedValue = if keys[key] then angular.fromJson webStorage.getItem(key) else
-              config: {}
+            savedValue = angular.fromJson webStorage.getItem(key)
+            if not (savedValue and savedValue.config and savedValue.value)
+              savedValue =
+                config: {}
             savedValue.value = value
             if expiredTime
               savedValue.config[_confKey.EXPIRED_TIME] = expiredTime
