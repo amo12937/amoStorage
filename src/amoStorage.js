@@ -234,5 +234,3 @@
   });
 
 }).call(this);
-
-//# sourceMappingURL=amoStorage.js.map

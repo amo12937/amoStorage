@@ -9,9 +9,6 @@ module.exports = (grunt) ->
     clean:
       dist: "src"
     coffee:
-      options:
-        sourceMap: true
-        sourceRoot: ""
       dist:
         files: [
           {
