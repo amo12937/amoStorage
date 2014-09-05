@@ -30,7 +30,7 @@
       },
       $get: [
         "$rootScope", function($rootScope) {
-          var AmoStorage, storageFactory, _appName, _deleteKeys, _deleteRevision, _genKeysKey, _keyGeneratorFactory, _keysKey, _refreshRevisions, _revision, _revisionsKey, _ruleForDeletingRevisions, _separator, _suffix, _suffixForSys;
+          var AmoStorage, storageFactory, _appName, _deleteRevision, _genKeysListKey, _keyGeneratorFactory, _keysListKey, _refreshRevisions, _revision, _revisionsKey, _ruleForDeletingRevisions, _separator, _suffix, _suffixForSys;
           _appName = provider.appName;
           _revision = provider.revision;
           _separator = provider.separator;
@@ -38,29 +38,22 @@
           _ruleForDeletingRevisions = provider.ruleForDeletingRevisions;
           _suffix = "#";
           _suffixForSys = "$";
-          _genKeysKey = function(revision) {
+          _genKeysListKey = function(revision) {
             return "" + _appName + "/" + revision + "/keys" + _suffixForSys;
           };
-          _keysKey = _genKeysKey(_revision);
+          _keysListKey = _genKeysListKey(_revision);
           _revisionsKey = "" + _appName + "/revisions" + _suffixForSys;
-          _deleteKeys = function(webStorage, keys) {
-            var key, _results;
-            _results = [];
-            for (key in keys) {
-              webStorage.removeItem(key);
-              _results.push(delete keys[key]);
-            }
-            return _results;
-          };
           _deleteRevision = function(webStorage, revision) {
-            var keys, keysKey, p, v;
-            keysKey = _genKeysKey(revision);
-            keys = angular.fromJson(webStorage.getItem(keysKey));
-            for (p in keys) {
-              v = keys[p];
-              _deleteKeys(webStorage, v);
+            var key, keys, keysList, keysListKey, p;
+            keysListKey = _genKeysListKey(revision);
+            keysList = angular.fromJson(webStorage.getItem(keysListKey));
+            for (p in keysList) {
+              keys = keysList[p];
+              for (key in keys) {
+                webStorage.removeItem(key);
+              }
             }
-            return webStorage.removeItem(keysKey);
+            return webStorage.removeItem(keysListKey);
           };
           _refreshRevisions = function(webStorage) {
             var newRevisions, revision, revisions, _i, _len;
@@ -95,7 +88,7 @@
             };
             _getSavedValue = function(key, now) {
               var savedValue;
-              if (!keys[key]) {
+              if (!keys.get(key)) {
                 return null;
               }
               savedValue = angular.fromJson(webStorage.getItem(key));
@@ -104,7 +97,7 @@
               }
               if (now - savedValue.config[_confKey.LAST_USAGE_DATETIME] > savedValue.config[_confKey.EXPIRED_TIME] * 1000) {
                 webStorage.removeItem(key);
-                delete keys[key];
+                keys.del(key);
                 return null;
               }
               return savedValue;
@@ -164,7 +157,7 @@
                 }
                 savedValue.config[_confKey.LAST_USAGE_DATETIME] = now;
                 webStorage.setItem(key, angular.toJson(savedValue));
-                keys[key] = true;
+                keys.set(key);
                 return this;
               },
               del: function(key) {
@@ -172,55 +165,49 @@
                 value = this.get(key);
                 key = _genKey(key);
                 webStorage.removeItem(key);
-                delete keys[key];
+                keys.del(key);
                 return value;
               },
               delAll: function() {
-                return _deleteKeys(webStorage, keys);
+                return keys.delAll();
               }
             };
             return storage;
           };
           storageFactory = function(webStorage) {
-            var k, p, v, _debounce, _keys, _prevKeys, _storages;
+            var Keys, _keysList, _storages;
             _refreshRevisions(webStorage);
             _storages = {};
-            _keys = angular.fromJson(webStorage.getItem(_keysKey) || "{}");
-            _prevKeys = {};
-            for (p in _keys) {
-              v = _keys[p];
-              _prevKeys[p] = {};
-              for (k in v) {
-                _prevKeys[p][k] = true;
-              }
-            }
-            _debounce = null;
-            $rootScope.$watch(function() {
-              return _debounce || (_debounce = setTimeout((function() {
-                var b, _oldKeys, _ref, _ref1;
-                _debounce = null;
-                _oldKeys = _prevKeys;
-                _prevKeys = {};
-                b = false;
-                for (p in _keys) {
-                  v = _keys[p];
-                  _prevKeys[p] = {};
-                  for (k in v) {
-                    _prevKeys[p][k] = true;
-                    b || (b = !((_ref = _oldKeys[p]) != null ? _ref[k] : void 0));
-                    if ((_ref1 = _oldKeys[p]) != null) {
-                      delete _ref1[k];
-                    }
+            _keysList = angular.fromJson(webStorage.getItem(_keysListKey) || "{}");
+            Keys = function(prefix) {
+              var self, _keys;
+              _keys = _keysList[prefix] != null ? _keysList[prefix] : _keysList[prefix] = {};
+              self = {
+                get: function(key) {
+                  return _keys[key] || false;
+                },
+                set: function(key) {
+                  _keys[key] = true;
+                  webStorage.setItem(_keysListKey, angular.toJson(_keysList));
+                  return self;
+                },
+                del: function(key) {
+                  delete _keys[key];
+                  return webStorage.setItem(_keysListKey, angular.toJson(_keysList));
+                },
+                delAll: function() {
+                  var k;
+                  for (k in _keys) {
+                    webStorage.removeItem(k);
+                    delete _keys[k];
                   }
-                  b || (b = !util.isEmptyObj(_oldKeys[p]));
+                  return webStorage.setItem(_keysListKey, angular.toJson(_keysList));
                 }
-                if (b) {
-                  return webStorage.setItem(_keysKey, angular.toJson(_prevKeys));
-                }
-              }), 100));
-            });
+              };
+              return self;
+            };
             return function(prefix) {
-              return _storages[prefix] != null ? _storages[prefix] : _storages[prefix] = AmoStorage(webStorage, prefix, _keys[prefix] != null ? _keys[prefix] : _keys[prefix] = {});
+              return _storages[prefix] != null ? _storages[prefix] : _storages[prefix] = AmoStorage(webStorage, prefix, Keys(prefix));
             };
           };
           return {

@@ -26,20 +26,17 @@ angular.module("amo.webStorage", []).provider "amoStorageManager", ->
       _suffix = "#"       # unalterable
       _suffixForSys = "$" # unalterable
 
-      _genKeysKey = (revision) -> "#{_appName}/#{revision}/keys#{_suffixForSys}"
-      _keysKey = _genKeysKey _revision
+      _genKeysListKey = (revision) -> "#{_appName}/#{revision}/keys#{_suffixForSys}"
+      _keysListKey = _genKeysListKey _revision
       _revisionsKey = "#{_appName}/revisions#{_suffixForSys}"
 
-      _deleteKeys = (webStorage, keys) ->
-        for key of keys
-          webStorage.removeItem key
-          delete keys[key]
-
       _deleteRevision = (webStorage, revision) ->
-        keysKey = _genKeysKey revision
-        keys = angular.fromJson webStorage.getItem keysKey
-        _deleteKeys webStorage, v for p, v of keys
-        webStorage.removeItem keysKey
+        keysListKey = _genKeysListKey revision
+        keysList = angular.fromJson webStorage.getItem keysListKey
+        for p, keys of keysList
+          for key of keys
+            webStorage.removeItem key
+        webStorage.removeItem keysListKey
 
       _refreshRevisions = (webStorage = localStorage) ->
         revisions = angular.fromJson(webStorage.getItem(_revisionsKey) or "[]")
@@ -63,14 +60,14 @@ angular.module("amo.webStorage", []).provider "amoStorageManager", ->
           LAST_USAGE_DATETIME: "u"
 
         _getSavedValue = (key, now) ->
-          if not keys[key]
+          if not keys.get key
             return null
           savedValue = angular.fromJson webStorage.getItem(key)
           if not savedValue
             return null
           if now - savedValue.config[_confKey.LAST_USAGE_DATETIME] > savedValue.config[_confKey.EXPIRED_TIME] * 1000
             webStorage.removeItem key
-            delete keys[key]
+            keys.del key
             return null
           return savedValue
 
@@ -104,51 +101,69 @@ angular.module("amo.webStorage", []).provider "amoStorageManager", ->
             savedValue.config[_confKey.CREATE_DATETIME] ?= now
             savedValue.config[_confKey.LAST_USAGE_DATETIME] = now
             webStorage.setItem key, angular.toJson(savedValue)
-            keys[key] = true
+            keys.set key
             return @
 
           del: (key) ->
             value = @get key
             key = _genKey(key)
             webStorage.removeItem key
-            delete keys[key]
+            keys.del key
             return value
 
           delAll: ->
-            _deleteKeys webStorage, keys
+            keys.delAll()
 
         return storage
 
       storageFactory = (webStorage) ->
         _refreshRevisions(webStorage)
         _storages = {}
-        _keys = angular.fromJson(webStorage.getItem(_keysKey) or "{}")
-        _prevKeys = {}
-        for p, v of _keys
-          _prevKeys[p] = {}
-          for k of v
-            _prevKeys[p][k] = true
+        _keysList = angular.fromJson(webStorage.getItem(_keysListKey) or "{}")
+        Keys = (prefix) ->
+          _keys = _keysList[prefix] ?= {}
+          self =
+            get: (key) -> _keys[key] or false
+            set: (key) ->
+              _keys[key] = true
+              webStorage.setItem _keysListKey, angular.toJson _keysList
+              return self
+            del: (key) ->
+              delete _keys[key]
+              webStorage.setItem _keysListKey, angular.toJson _keysList
+            delAll: ->
+              for k of _keys
+                webStorage.removeItem k
+                delete  _keys[k]
+              webStorage.setItem _keysListKey, angular.toJson _keysList
+          return self
 
-        _debounce = null
-        $rootScope.$watch ->
-          _debounce or (_debounce = setTimeout((->
-            _debounce = null
-            _oldKeys = _prevKeys
-            _prevKeys = {}
-            b = false
-            for p, v of _keys
-              _prevKeys[p] = {}
-              for k of v
-                _prevKeys[p][k] = true
-                b or= (not _oldKeys[p]?[k])
-                delete _oldKeys[p]?[k]
-              b or= not util.isEmptyObj _oldKeys[p]
-            if b
-              webStorage.setItem _keysKey, angular.toJson(_prevKeys)
-          ), 100))
+#        _prevKeys = {}
+#        for p, v of _keysList
+#          _prevKeys[p] = {}
+#          for k of v
+#            _prevKeys[p][k] = true
+#
+#        _debounce = null
+#        $rootScope.$watch ->
+#          _debounce or (_debounce = setTimeout((->
+#            _debounce = null
+#            _oldKeys = _prevKeys
+#            _prevKeys = {}
+#            b = false
+#            for p, v of _keysList
+#              _prevKeys[p] = {}
+#              for k of v
+#                _prevKeys[p][k] = true
+#                b or= (not _oldKeys[p]?[k])
+#                delete _oldKeys[p]?[k]
+#              b or= not util.isEmptyObj _oldKeys[p]
+#            if b
+#              webStorage.setItem _keysListKey, angular.toJson(_prevKeys)
+#          ), 100))
 
         return (prefix) ->
-          _storages[prefix] ?= AmoStorage(webStorage, prefix, _keys[prefix] ?= {})
+          _storages[prefix] ?= AmoStorage(webStorage, prefix, Keys(prefix))
 
       return {
         getLocalStorage: storageFactory(localStorage)
