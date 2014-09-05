@@ -16,7 +16,7 @@ angular.module("amo.webStorage", []).provider "amoStorageManager", ->
       return (key) -> [_prefix, key].join separator
     ruleForDeletingRevisions: (revision) -> true
 
-    $get: ["$rootScope", ($rootScope) ->
+    $get: ->
       _appName = provider.appName
       _revision = provider.revision
       _separator = provider.separator
@@ -138,30 +138,6 @@ angular.module("amo.webStorage", []).provider "amoStorageManager", ->
               webStorage.setItem _keysListKey, angular.toJson _keysList
           return self
 
-#        _prevKeys = {}
-#        for p, v of _keysList
-#          _prevKeys[p] = {}
-#          for k of v
-#            _prevKeys[p][k] = true
-#
-#        _debounce = null
-#        $rootScope.$watch ->
-#          _debounce or (_debounce = setTimeout((->
-#            _debounce = null
-#            _oldKeys = _prevKeys
-#            _prevKeys = {}
-#            b = false
-#            for p, v of _keysList
-#              _prevKeys[p] = {}
-#              for k of v
-#                _prevKeys[p][k] = true
-#                b or= (not _oldKeys[p]?[k])
-#                delete _oldKeys[p]?[k]
-#              b or= not util.isEmptyObj _oldKeys[p]
-#            if b
-#              webStorage.setItem _keysListKey, angular.toJson(_prevKeys)
-#          ), 100))
-
         return (prefix) ->
           _storages[prefix] ?= AmoStorage(webStorage, prefix, Keys(prefix))
 
@@ -169,5 +145,4 @@ angular.module("amo.webStorage", []).provider "amoStorageManager", ->
         getLocalStorage: storageFactory(localStorage)
         getSessionStorage: storageFactory(sessionStorage)
       }
-    ]
   return provider

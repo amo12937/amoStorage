@@ -178,26 +178,14 @@ describe "amoStorage module", ->
             item = angular.fromJson webStorage.getItem expectedKey
             expect(item.config[storage.confKey.LAST_USAGE_DATETIME]).toBe now
 
-        it "should set '#{keysKey}' key on #{webStorageName}", (done) ->
-          inject ["$rootScope", ($rootScope) ->
-            storage.set key, value
-            $rootScope.$apply()
-            setTimeout((->
-              expect(webStorage.getItem(keysKey)).not.toBe null
-              done()
-            ), 110)
-          ]
+        it "should set '#{keysKey}' key on #{webStorageName}", ->
+          storage.set key, value
+          expect(webStorage.getItem(keysKey)).not.toBe null
 
-        it "should set the object as '#{keysKey}' on #{webStorageName}", (done) ->
-          inject ["$rootScope", ($rootScope) ->
-            storage.set key, value
-            $rootScope.$apply()
-            setTimeout((->
-              item = angular.fromJson(webStorage.getItem(keysKey))
-              expect(item[prefix][expectedKey]).toBe true
-              done()
-            ), 110)
-          ]
+        it "should set the object as '#{keysKey}' on #{webStorageName}", ->
+          storage.set key, value
+          item = angular.fromJson(webStorage.getItem(keysKey))
+          expect(item[prefix][expectedKey]).toBe true
 
         it "should update {confKey.LAST_USAGE_DATETIME} when setting value again", ->
           storage.set key, value
@@ -291,20 +279,14 @@ describe "amoStorage module", ->
           storage.del key
           expect(webStorage.getItem(expectedKey)).toBe null
 
-        it "should remove storage['#{keysKey}']['#{prefix}']['#{expectedKey}']", (done) ->
-          inject ["$rootScope", ($rootScope) ->
-            storage.set key, value
-            $rootScope.$apply()
-            setTimeout((->
-              storage.del key
-              $rootScope.$apply()
-              setTimeout((->
-                item = angular.fromJson webStorage.getItem keysKey
-                expect(item[prefix][expectedKey]).not.toBeDefined()
-                done()
-              ), 110)
-            ), 110)
-          ]
+        it "should remove storage['#{keysKey}']['#{prefix}']['#{expectedKey}']", ->
+          storage.set key, value
+          item = angular.fromJson webStorage.getItem keysKey
+          expect(item[prefix][expectedKey]).toBeDefined()
+          storage.del key
+          item = angular.fromJson webStorage.getItem keysKey
+          expect(item[prefix][expectedKey]).not.toBeDefined()
+
       describe "delAll method", ->
         it "should remove all of keys whose prefix is '#{prefix}' on #{webStorageName}", ->
           storage.set key, value
@@ -313,21 +295,14 @@ describe "amoStorage module", ->
           expect(webStorage.getItem(expectedKey)).toBe null
           expect(webStorage.getItem(another.expectedKey)).toBe null
 
-        it "should remove '#{prefix}' key on '#{keysKey}' key", (done) ->
-          inject ["$rootScope", ($rootScope) ->
-            storage.set key, value
-            storage.set another.key, another.value
-            $rootScope.$apply()
-            setTimeout((->
-              storage.delAll()
-              $rootScope.$apply()
-              setTimeout((->
-                item = angular.fromJson webStorage.getItem keysKey
-                expect(item[prefix]).toEqual({})
-                done()
-              ), 110)
-            ), 110)
-          ]
+        it "should remove '#{prefix}' key on '#{keysKey}' key", ->
+          storage.set key, value
+          storage.set another.key, another.value
+          item = angular.fromJson webStorage.getItem keysKey
+          expect(item[prefix]).not.toEqual({})
+          storage.delAll()
+          item = angular.fromJson webStorage.getItem keysKey
+          expect(item[prefix]).toEqual({})
 
     describe "updating revision (#{webStorageName})", ->
       old =
